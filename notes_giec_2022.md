@@ -1,4 +1,4 @@
-# Raports
+# Rapports
 
 - [Summary for policy makers](https://report.ipcc.ch/ar6wg2/pdf/IPCC_AR6_WGII_SummaryForPolicymakers.pdf)
 	- 17 (augmentations températures en fct des scénarios)
