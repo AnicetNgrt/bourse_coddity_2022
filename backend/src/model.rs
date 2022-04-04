@@ -35,24 +35,36 @@ pub struct AccountsService {
     user_dl: Box<dyn UserDl>,
     password_hasher: Box<dyn PasswordHasher>,
     email_checker: Box<dyn EmailChecker>,
-    handle_generator: Box<dyn HandleGenerator>
+    handle_generator: Box<dyn HandleGenerator>,
+    token_handler: Box<dyn TokenHandler>
 }
 
 impl AccountsService {
-    pub async fn authenticate(&self, login: &String, password: &String) -> Result<i64, AuthError> {
+    pub async fn authenticate_basic(&self, login: &String, password: &String) -> Result<i64, BasicAuthError> {
         match self.user_dl.find_user_id_by_login(login).await {
             Ok(id) => match self.user_dl.find_user_data(id).await {
                 Ok(UserData { password_hash, .. }) => {
                     match self.password_hasher.verify(password, &password_hash) {
                         true => Ok(id),
-                        false => Err(AuthError::BadPassword),
+                        false => Err(BasicAuthError::BadPassword),
                     }
                 }
                 Err(DlFindError::NotFound) => panic!("Found user's data is then not found."),
-                Err(DlFindError::Failure) => Err(AuthError::DlFailure),
+                Err(DlFindError::Failure) => Err(BasicAuthError::DlFailure),
             },
-            Err(DlFindError::NotFound) => Err(AuthError::UserNotFound),
-            Err(DlFindError::Failure) => Err(AuthError::DlFailure),
+            Err(DlFindError::NotFound) => Err(BasicAuthError::UserNotFound),
+            Err(DlFindError::Failure) => Err(BasicAuthError::DlFailure),
+        }
+    }
+
+    pub async fn authenticate_token(&self, token: &String) -> Result<i64, TokenAuthError> {
+        match self.token_handler.check(token) {
+            Ok(id) => match self.user_dl.find_user_data(id).await {
+                Ok(_) => Ok(id),
+                Err(DlFindError::NotFound) => Err(TokenAuthError::UserNotFound),
+                Err(DlFindError::Failure) => Err(TokenAuthError::DlFailure),
+            },
+            Err(_) => Err(TokenAuthError::BadToken),
         }
     }
 
@@ -120,9 +132,15 @@ impl AccountsService {
     }
 }
 
-pub enum AuthError {
+pub enum BasicAuthError {
     DlFailure,
     BadPassword,
+    UserNotFound,
+}
+
+pub enum TokenAuthError {
+    DlFailure,
+    BadToken,
     UserNotFound,
 }
 
@@ -169,4 +187,9 @@ pub trait EmailChecker {
 
 pub trait HandleGenerator {
     fn generate(&self, username: &String) -> String;
+}
+
+pub trait TokenHandler {
+    fn generate(&self, id: i64) -> String;
+    fn check(&self, token: &String) -> Result<i64, ()>;
 }
