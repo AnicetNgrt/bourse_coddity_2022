@@ -36,4 +36,4 @@
 > Except as noted, all the data in the Climate Data API are derived from 15 global circulation models (GCMs), the most comprehensive physically-based models of climate change available and used by the Intergovernmental Panel on Climate Change (IPCC) 4th Assessment Reports. The models simulate the response of the global climate system to increasing greenhouse gas concentrations. The data in the Climate Data API have been aggregated to both the country and basin levels, as explained below.
 
 - [Documentation](https://datahelpdesk.worldbank.org/knowledgebase/articles/902061-climate-data-api)
-- [Base on IPCC AR4 2007](https://www.ipcc.ch/report/ar4/syr/)
+- [Based on IPCC AR4 2007](https://www.ipcc.ch/report/ar4/syr/)
