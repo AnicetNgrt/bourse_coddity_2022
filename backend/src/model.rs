@@ -40,12 +40,15 @@ pub struct AccountsService {
 }
 
 impl AccountsService {
-    pub async fn authenticate_basic(&self, login: &String, password: &String) -> Result<i64, BasicAuthError> {
+    pub async fn authenticate_basic(&self, login: &String, password: &String) -> Result<AuthSuccessPayload, BasicAuthError> {
         match self.user_dl.find_user_id_by_login(login).await {
             Ok(id) => match self.user_dl.find_user_data(id).await {
                 Ok(UserData { password_hash, .. }) => {
                     match self.password_hasher.verify(password, &password_hash) {
-                        true => Ok(id),
+                        true => Ok(AuthSuccessPayload {
+                            user_id: id,
+                            token: self.token_handler.generate(id)
+                        }),
                         false => Err(BasicAuthError::BadPassword),
                     }
                 }
@@ -57,10 +60,13 @@ impl AccountsService {
         }
     }
 
-    pub async fn authenticate_token(&self, token: &String) -> Result<i64, TokenAuthError> {
+    pub async fn authenticate_token(&self, token: &String) -> Result<AuthSuccessPayload, TokenAuthError> {
         match self.token_handler.check(token) {
             Ok(id) => match self.user_dl.find_user_data(id).await {
-                Ok(_) => Ok(id),
+                Ok(_) => Ok(AuthSuccessPayload {
+                    user_id: id,
+                    token: token.clone() // TODO : Refresh token on every token auth ?
+                }),
                 Err(DlFindError::NotFound) => Err(TokenAuthError::UserNotFound),
                 Err(DlFindError::Failure) => Err(TokenAuthError::DlFailure),
             },
@@ -130,6 +136,11 @@ impl AccountsService {
             email: data.email.clone(),
         }
     }
+}
+
+pub struct AuthSuccessPayload {
+    token: String,
+    user_id: i64
 }
 
 pub enum BasicAuthError {
