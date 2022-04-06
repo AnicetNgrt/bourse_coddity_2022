@@ -1,6 +1,8 @@
-use crate::model::{dl, user, utilities::*};
-
-use super::FindError;
+use super::super::{dl, user};
+use super::{
+    dependencies::{EmailChecker, HandleGenerator, PasswordHasher, TokenHandler},
+    FindError,
+};
 
 pub struct AccountsService {
     user_dl: Box<dyn dl::user::Repository>,
@@ -11,6 +13,22 @@ pub struct AccountsService {
 }
 
 impl AccountsService {
+    pub fn new(
+        user_dl: Box<dyn dl::user::Repository>,
+        password_hasher: Box<dyn PasswordHasher>,
+        email_checker: Box<dyn EmailChecker>,
+        handle_generator: Box<dyn HandleGenerator>,
+        token_handler: Box<dyn TokenHandler>,
+    ) -> Self {
+        AccountsService {
+            user_dl,
+            password_hasher,
+            email_checker,
+            handle_generator,
+            token_handler,
+        }
+    }
+
     pub async fn authenticate_basic(
         &self,
         login: &String,
